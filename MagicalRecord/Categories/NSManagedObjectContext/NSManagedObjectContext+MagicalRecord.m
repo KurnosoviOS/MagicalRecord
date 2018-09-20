@@ -29,17 +29,23 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
     NSAssert(coordinator, @"Provided coordinator cannot be nil!");
     if (MagicalRecordDefaultContext == nil)
     {
-#warning temp solution
-        /*
-        NSManagedObjectContext *rootContext = [self MR_contextWithStoreCoordinator:coordinator];
-        [self MR_setRootSavingContext:rootContext];
-
-        NSManagedObjectContext *defaultContext = [self MR_newMainQueueContext];
-        [self MR_setDefaultContext:defaultContext];
-
-        [defaultContext setParentContext:rootContext];
-         */
+         NSManagedObjectContext *rootContext = [self MR_contextWithStoreCoordinator:coordinator];
+         [self MR_setRootSavingContext:rootContext];
+         
+         NSManagedObjectContext *defaultContext = [self MR_newMainQueueContext];
+         [self MR_setDefaultContext:defaultContext];
+         
+         [defaultContext setParentContext:rootContext];
         
+    }
+}
+
++ (void) MR_initializeMainThreadDefaultContextWithCoordinator:(NSPersistentStoreCoordinator *)coordinator;
+{
+    NSAssert(coordinator, @"Provided coordinator cannot be nil!");
+    if (MagicalRecordDefaultContext == nil)
+    {
+#warning temp solution
         NSManagedObjectContext *rootContext = [self MR_mainContextWithStoreCoordinator:coordinator];
         [self MR_setRootSavingContext:rootContext];
         [self MR_setDefaultContext:rootContext];

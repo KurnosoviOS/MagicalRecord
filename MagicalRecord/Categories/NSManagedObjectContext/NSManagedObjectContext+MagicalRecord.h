@@ -63,6 +63,8 @@
  */
 + (MR_nonnull NSManagedObjectContext *) MR_contextWithStoreCoordinator:(MR_nonnull NSPersistentStoreCoordinator *)coordinator;
 
++ (MR_nonnull NSManagedObjectContext *) MR_initializeMainThreadDefaultContextWithCoordinator:(MR_nonnull NSPersistentStoreCoordinator *)coordinator;
+
 /**
  Initializes a context of type `NSMainQueueConcurrencyType`.
 
