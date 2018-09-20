@@ -29,6 +29,8 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
     NSAssert(coordinator, @"Provided coordinator cannot be nil!");
     if (MagicalRecordDefaultContext == nil)
     {
+#warning temp solution
+        /*
         NSManagedObjectContext *rootContext = [self MR_contextWithStoreCoordinator:coordinator];
         [self MR_setRootSavingContext:rootContext];
 
@@ -36,6 +38,12 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
         [self MR_setDefaultContext:defaultContext];
 
         [defaultContext setParentContext:rootContext];
+         */
+        
+        NSManagedObjectContext *rootContext = [self MR_mainContextWithStoreCoordinator:coordinator];
+        [self MR_setRootSavingContext:rootContext];
+        [self MR_setDefaultContext:rootContext];
+        
     }
 }
 
@@ -72,10 +80,24 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
 
 + (NSManagedObjectContext *) MR_contextWithStoreCoordinator:(NSPersistentStoreCoordinator *)coordinator
 {
-	NSManagedObjectContext *context = nil;
+    NSManagedObjectContext *context = nil;
     if (coordinator != nil)
-	{
+    {
         context = [self MR_newPrivateQueueContext];
+        [context performBlockAndWait:^{
+            [context setPersistentStoreCoordinator:coordinator];
+            MRLogVerbose(@"Created new context %@ with store coordinator: %@", [context MR_workingName], coordinator);
+        }];
+    }
+    return context;
+}
+
++ (NSManagedObjectContext *) MR_mainContextWithStoreCoordinator:(NSPersistentStoreCoordinator *)coordinator
+{
+    NSManagedObjectContext *context = nil;
+    if (coordinator != nil)
+    {
+        context = [self MR_newMainQueueContext];
         [context performBlockAndWait:^{
             [context setPersistentStoreCoordinator:coordinator];
             MRLogVerbose(@"Created new context %@ with store coordinator: %@", [context MR_workingName], coordinator);
