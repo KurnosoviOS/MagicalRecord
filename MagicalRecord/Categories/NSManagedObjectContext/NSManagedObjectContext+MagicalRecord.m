@@ -18,6 +18,9 @@ static NSString * const MagicalRecordContextWorkingName = @"MagicalRecordContext
 static NSManagedObjectContext *MagicalRecordRootSavingContext;
 static NSManagedObjectContext *MagicalRecordDefaultContext;
 
+static dispatch_queue_t serialQueue = nil;
+static NSManagedObjectContext *localContext = nil;
+
 static id MagicalRecordUbiquitySetupNotificationObserver;
 
 @implementation NSManagedObjectContext (MagicalRecord)
@@ -46,7 +49,12 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
     if (MagicalRecordDefaultContext == nil)
     {
 #warning temp solution
-        NSManagedObjectContext *rootContext = [self MR_mainContextWithStoreCoordinator:coordinator];
+        /*
+        NSManagedObjectContext *rootContext = [self MR_mainContextWithStoreCoordinator:coordinator];*/
+        NSManagedObjectContext *rootContext = [self MR_contextWithStoreCoordinator:coordinator];
+        
+        AreSingleThreadedCoreData = YES;
+        
         [self MR_setRootSavingContext:rootContext];
         [self MR_setDefaultContext:rootContext];
         
@@ -347,6 +355,37 @@ static id MagicalRecordUbiquitySetupNotificationObserver;
     }];
 
     MRLogInfo(@"Set root saving context: %@", MagicalRecordRootSavingContext);
+}
+
+
+#pragma mark Serial Saving
+
++ (NSManagedObjectContext *)serial_serialContext {
+    @synchronized (self) {
+        if (localContext == nil) {
+            NSManagedObjectContext *savingContext  = [NSManagedObjectContext MR_rootSavingContext];
+            localContext = [NSManagedObjectContext MR_contextWithParent:savingContext];
+        }
+    }
+    return localContext;
+}
+
++ (dispatch_queue_t)serial_queue {
+    @synchronized (self) {
+        if (serialQueue == nil) {
+            NSString *name = [NSString stringWithFormat:@"magicalRecordSerialSave-%@", [[NSUUID UUID] UUIDString]];
+            serialQueue = dispatch_queue_create([name cStringUsingEncoding:NSASCIIStringEncoding], DISPATCH_QUEUE_SERIAL);
+        }
+    }
+    
+    return serialQueue;
+}
+
++(void) cleanSerialContext {
+    @synchronized (self) {
+        serialQueue = nil;
+        localContext = nil;
+    }
 }
 
 @end

@@ -32,6 +32,7 @@ NSString * const kMagicalRecordCleanedUpNotification = @"kMagicalRecordCleanedUp
 
 + (void) cleanUp
 {
+    [NSManagedObjectContext cleanSerialContext];
     [self cleanUpErrorHanding];
     [self cleanUpStack];
     NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];

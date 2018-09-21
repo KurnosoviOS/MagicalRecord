@@ -20,16 +20,26 @@
 
 + (void) saveWithBlock:(void(^)(NSManagedObjectContext *localContext))block completion:(MRSaveCompletionHandler)completion;
 {
+    if (AreSingleThreadedCoreData) {
+        [self serialSaveWithBlock:block completion:completion];
+    }
+    else {
+        [self saveWithBlock_internal:block completion:completion];
+    }
+}
+
++ (void) saveWithBlock_internal:(void(^)(NSManagedObjectContext *localContext))block completion:(MRSaveCompletionHandler)completion;
+{
     NSManagedObjectContext *savingContext  = [NSManagedObjectContext MR_rootSavingContext];
     NSManagedObjectContext *localContext = [NSManagedObjectContext MR_contextWithParent:savingContext];
-
+    
     [localContext performBlock:^{
         [localContext MR_setWorkingName:NSStringFromSelector(_cmd)];
-
+        
         if (block) {
             block(localContext);
         }
-
+        
         [localContext MR_saveWithOptions:MRSaveParentContexts completion:completion];
     }];
 }
@@ -38,18 +48,46 @@
 
 + (void) saveWithBlockAndWait:(void(^)(NSManagedObjectContext *localContext))block;
 {
+    if (AreSingleThreadedCoreData) {
+    [self serialSaveWithBlockAndWait:block];
+}
+else {
+    [self saveWithBlockAndWait_internal:block];
+}
+}
+
++ (void) saveWithBlockAndWait_internal:(void(^)(NSManagedObjectContext *localContext))block;
+{
     NSManagedObjectContext *savingContext  = [NSManagedObjectContext MR_rootSavingContext];
     NSManagedObjectContext *localContext = [NSManagedObjectContext MR_contextWithParent:savingContext];
-
+    
     [localContext performBlockAndWait:^{
         [localContext MR_setWorkingName:NSStringFromSelector(_cmd)];
-
+        
         if (block) {
             block(localContext);
         }
-
+        
         [localContext MR_saveWithOptions:MRSaveParentContexts|MRSaveSynchronously completion:nil];
     }];
+}
+
++ (void)serialSaveWithBlock:(void (^)(NSManagedObjectContext *))block completion:(MRSaveCompletionHandler)completion {
+    dispatch_queue_t serialQueue = [NSManagedObjectContext serial_queue];
+    dispatch_async(serialQueue, ^{
+        [MagicalRecord saveWithBlock_internal:block completion:completion];
+    });
+}
+
++ (void)serialSaveWithBlockAndWait:(void (^)(NSManagedObjectContext *localContext))block {
+    dispatch_queue_t serialQueue = [NSManagedObjectContext serial_queue];
+    dispatch_sync(serialQueue, ^{
+        [MagicalRecord saveWithBlockAndWait_internal:block];
+    });
+}
+
++ (void)serialSaveWithBlock:(void (^)(NSManagedObjectContext *))block {
+    return [self serialSaveWithBlock:block completion:nil];
 }
 
 @end

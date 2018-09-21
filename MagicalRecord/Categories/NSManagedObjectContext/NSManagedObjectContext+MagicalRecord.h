@@ -9,6 +9,8 @@
 #import <MagicalRecord/MagicalRecordDeprecationMacros.h>
 #import <MagicalRecord/MagicalRecordXcode7CompatibilityMacros.h>
 
+static BOOL AreSingleThreadedCoreData;
+
 @interface NSManagedObjectContext (MagicalRecord)
 
 #pragma mark - Setup
@@ -117,6 +119,10 @@
  @param objects An object conforming to `NSFastEnumeration`, containing NSManagedObject instances
  */
 - (void) MR_deleteObjects:(MR_nonnull id <NSFastEnumeration>)objects;
+
++ (NSManagedObjectContext *)serial_serialContext;
++ (dispatch_queue_t)serial_queue;
++ (void) cleanSerialContext;
 
 @end
 
